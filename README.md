@@ -154,15 +154,6 @@ cd ShopsMart_Frontend
 
 npm install
 ```
-
-Create a `.env` file.
-
-```env
-VITE_API_URL=http://localhost:5000/api/v1
-
-VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-```
-
 Start the development server.
 
 ```bash
