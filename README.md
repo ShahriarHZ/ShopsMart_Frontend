@@ -8,7 +8,7 @@ Built with a scalable component-based architecture and optimized for performance
 
 ## Live Links
 
-- **Live Website:** shops-mart-frontend.vercel.app
+- **Live Website:** [shops-mart-frontend.vercel.app](https://shops-mart-frontend.vercel.app/)
 - **Backend API:** https://shopsmart-backend-1-j5zu.onrender.com
 
 > **Note:** The backend is hosted on Render's free tier. If it has been idle, the first API request may take 30–60 seconds while the server wakes up.
