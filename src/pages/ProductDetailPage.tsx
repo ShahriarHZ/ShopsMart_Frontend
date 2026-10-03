@@ -48,6 +48,13 @@ export const ProductDetailPage = () => {
   const hasDiscount = product.discount > 0;
   const categoryName = typeof product.category === 'string' ? undefined : product.category.name;
 
+  // Defensive fallbacks: older/seeded products may be missing these arrays entirely
+  // rather than having them as empty arrays, which crashes .length/.map/[0] access below.
+  const images = product.images ?? [];
+  const colors = product.colors ?? [];
+  const sizes = product.sizes ?? [];
+  const specifications = product.specifications ?? [];
+
   return (
     <div className="bg-base-200 min-h-[calc(100vh-4rem)]">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -59,19 +66,23 @@ export const ProductDetailPage = () => {
           {/* Gallery */}
           <div>
             <div className="aspect-square rounded-2xl overflow-hidden bg-base-100 border border-base-300 mb-3">
-              {product.images[activeImage] && (
+              {images[activeImage] ? (
                 <img
-                  src={product.images[activeImage].url}
-                  alt={product.images[activeImage].alt || product.title}
+                  src={images[activeImage].url}
+                  alt={images[activeImage].alt || product.title}
                   className="w-full h-full object-cover"
                 />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-base-content/30 text-sm">
+                  No image available
+                </div>
               )}
             </div>
-            {product.images.length > 1 && (
+            {images.length > 1 && (
               <div className="flex gap-2">
-                {product.images.map((img, i) => (
+                {images.map((img, i) => (
                   <button
-                    key={img.publicId}
+                    key={img.publicId ?? i}
                     onClick={() => setActiveImage(i)}
                     className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${
                       i === activeImage ? 'border-primary' : 'border-base-300'
@@ -93,9 +104,9 @@ export const ProductDetailPage = () => {
             <div className="flex items-center gap-2 mt-3">
               <div className="flex items-center gap-1 text-sm">
                 <Star size={16} className="fill-warning text-warning" />
-                <span className="font-medium">{product.ratingsAverage.toFixed(1)}</span>
+                <span className="font-medium">{(product.ratingsAverage ?? 0).toFixed(1)}</span>
               </div>
-              <span className="text-sm text-base-content/50">({product.ratingsCount} reviews)</span>
+              <span className="text-sm text-base-content/50">({product.ratingsCount ?? 0} reviews)</span>
               {product.stock > 0 ? (
                 <span className="badge badge-success badge-outline ml-2">In Stock</span>
               ) : (
@@ -115,23 +126,23 @@ export const ProductDetailPage = () => {
 
             <p className="text-base-content/70 mt-5 leading-relaxed">{product.description}</p>
 
-            {(product.colors.length > 0 || product.sizes.length > 0) && (
+            {(colors.length > 0 || sizes.length > 0) && (
               <div className="mt-5 space-y-3">
-                {product.colors.length > 0 && (
+                {colors.length > 0 && (
                   <div>
                     <p className="text-sm font-medium mb-1.5">Color</p>
                     <div className="flex gap-2">
-                      {product.colors.map((c) => (
+                      {colors.map((c) => (
                         <span key={c} className="badge badge-lg">{c}</span>
                       ))}
                     </div>
                   </div>
                 )}
-                {product.sizes.length > 0 && (
+                {sizes.length > 0 && (
                   <div>
                     <p className="text-sm font-medium mb-1.5">Size</p>
                     <div className="flex gap-2">
-                      {product.sizes.map((s) => (
+                      {sizes.map((s) => (
                         <span key={s} className="badge badge-lg badge-outline">{s}</span>
                       ))}
                     </div>
@@ -196,12 +207,12 @@ export const ProductDetailPage = () => {
               <div className="flex items-center gap-2"><ShieldCheck size={16} /> Secure checkout</div>
             </div>
 
-            {product.specifications.length > 0 && (
+            {specifications.length > 0 && (
               <div className="mt-8">
                 <h2 className="font-semibold mb-2">Specifications</h2>
                 <table className="table table-sm">
                   <tbody>
-                    {product.specifications.map((spec) => (
+                    {specifications.map((spec) => (
                       <tr key={spec.key}>
                         <td className="text-base-content/50">{spec.key}</td>
                         <td className="font-medium">{spec.value}</td>

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useAdminOrders, useUpdateOrderStatus } from '@/hooks/useAdmin';
 import { OrderStatus } from '@/types/cart.types';
 
+const money = (n?: number | null) => `$${(n ?? 0).toFixed(2)}`;
+
 const STATUS_OPTIONS: OrderStatus[] = [
   'pending', 'confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'cancelled', 'refunded',
 ];
@@ -51,37 +53,41 @@ export const AdminOrdersPage = () => {
           <p className="text-center text-base-content/50 py-16">No orders found.</p>
         ) : (
           <div className="space-y-3">
-            {orders.map((order) => (
-              <div key={order._id} className="card bg-base-100 border border-base-300">
-                <div className="card-body p-4 flex-row items-center justify-between flex-wrap gap-3">
-                  <div>
-                    <p className="text-sm font-medium">{order.user?.name ?? 'Unknown customer'}</p>
-                    <p className="text-xs text-base-content/50">{order.user?.email}</p>
-                    <p className="text-xs text-base-content/40 mt-0.5">
-                      #{order._id.slice(-8).toUpperCase()} ·{' '}
-                      {new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item(s)
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold">${order.total.toFixed(2)}</span>
-                    <span className={`badge ${STATUS_BADGE[order.status] ?? 'badge-ghost'} capitalize`}>
-                      {order.status.replace(/_/g, ' ')}
-                    </span>
-                    <select
-                      value={order.status}
-                      onChange={(e) => updateStatus({ orderId: order._id, status: e.target.value })}
-                      className="select select-bordered select-xs"
-                    >
-                      {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>
-                          {s.replace(/_/g, ' ')}
-                        </option>
-                      ))}
-                    </select>
+            {orders.map((order) => {
+              const status = order.status ?? 'pending';
+              return (
+                <div key={order._id} className="card bg-base-100 border border-base-300">
+                  <div className="card-body p-4 flex-row items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <p className="text-sm font-medium">{order.user?.name ?? 'Unknown customer'}</p>
+                      <p className="text-xs text-base-content/50">{order.user?.email}</p>
+                      <p className="text-xs text-base-content/40 mt-0.5">
+                        #{String(order._id).slice(-8).toUpperCase()} ·{' '}
+                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '—'} ·{' '}
+                        {order.items?.length ?? 0} item(s)
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold">{money(order.total)}</span>
+                      <span className={`badge ${STATUS_BADGE[status] ?? 'badge-ghost'} capitalize`}>
+                        {status.replace(/_/g, ' ')}
+                      </span>
+                      <select
+                        value={status}
+                        onChange={(e) => updateStatus({ orderId: order._id, status: e.target.value })}
+                        className="select select-bordered select-xs"
+                      >
+                        {STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s}>
+                            {s.replace(/_/g, ' ')}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

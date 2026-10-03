@@ -4,6 +4,8 @@ import { DollarSign, ShoppingBag, Users, Package, AlertTriangle, TrendingUp } fr
 import { useDashboardStats, useRevenueSeries } from '@/hooks/useAdmin';
 import { RestockRow } from '@/components/admin/RestockRow';
 
+const money = (n?: number | null) => `$${(n ?? 0).toFixed(2)}`;
+
 const StatCard = ({
   icon: Icon,
   label,
@@ -42,6 +44,11 @@ export const AdminDashboardPage = () => {
     );
   }
 
+  const outOfStock = stats.outOfStockProducts ?? [];
+  const lowStock = stats.lowStockProducts ?? [];
+  const bestSelling = stats.bestSellingProducts ?? [];
+  const recentOrders = stats.recentOrders ?? [];
+
   return (
     <div className="bg-base-200 min-h-[calc(100vh-4rem)] px-4 py-10">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -55,10 +62,10 @@ export const AdminDashboardPage = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard icon={DollarSign} label="Total Revenue" value={`$${stats.totalRevenue.toFixed(2)}`} tint="bg-success/10 text-success" />
-          <StatCard icon={TrendingUp} label="This Month" value={`$${stats.monthlyRevenue.toFixed(2)}`} tint="bg-primary/10 text-primary" />
-          <StatCard icon={ShoppingBag} label="Total Orders" value={String(stats.totalOrders)} tint="bg-info/10 text-info" />
-          <StatCard icon={Users} label="Customers" value={String(stats.totalUsers)} tint="bg-secondary/10 text-secondary" />
+          <StatCard icon={DollarSign} label="Total Revenue" value={money(stats.totalRevenue)} tint="bg-success/10 text-success" />
+          <StatCard icon={TrendingUp} label="This Month" value={money(stats.monthlyRevenue)} tint="bg-primary/10 text-primary" />
+          <StatCard icon={ShoppingBag} label="Total Orders" value={String(stats.totalOrders ?? 0)} tint="bg-info/10 text-info" />
+          <StatCard icon={Users} label="Customers" value={String(stats.totalUsers ?? 0)} tint="bg-secondary/10 text-secondary" />
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -68,12 +75,12 @@ export const AdminDashboardPage = () => {
               <h2 className="card-title text-base">Revenue — Last 30 Days</h2>
               <div className="h-64 mt-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={revenueSeries}>
+                  <LineChart data={revenueSeries ?? []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--fallback-b3,oklch(var(--b3)))" />
-                    <XAxis dataKey="_id" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
+                    <XAxis dataKey="_id" tick={{ fontSize: 11 }} tickFormatter={(v) => String(v ?? '').slice(5)} />
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue']}
+                      formatter={(value: number) => [money(value), 'Revenue']}
                       contentStyle={{ borderRadius: 8, fontSize: 12 }}
                     />
                     <Line type="monotone" dataKey="revenue" stroke="#4f46e5" strokeWidth={2} dot={false} />
@@ -82,7 +89,7 @@ export const AdminDashboardPage = () => {
               </div>
               <p className="text-sm text-base-content/50 mt-2">
                 Average order value:{' '}
-                <span className="font-medium text-base-content">${stats.averageOrderValue.toFixed(2)}</span>
+                <span className="font-medium text-base-content">{money(stats.averageOrderValue)}</span>
               </p>
             </div>
           </div>
@@ -93,14 +100,14 @@ export const AdminDashboardPage = () => {
               <h2 className="card-title text-base flex items-center gap-2">
                 <AlertTriangle size={18} className="text-warning" /> Inventory Alerts
               </h2>
-              {stats.outOfStockProducts.length === 0 && stats.lowStockProducts.length === 0 ? (
+              {outOfStock.length === 0 && lowStock.length === 0 ? (
                 <p className="text-sm text-base-content/50">Stock levels look healthy.</p>
               ) : (
                 <ul className="divide-y divide-base-300">
-                  {stats.outOfStockProducts.map((p) => (
+                  {outOfStock.map((p) => (
                     <RestockRow key={p._id} product={p} />
                   ))}
-                  {stats.lowStockProducts.map((p) => (
+                  {lowStock.map((p) => (
                     <RestockRow key={p._id} product={p} />
                   ))}
                 </ul>
@@ -116,18 +123,22 @@ export const AdminDashboardPage = () => {
               <h2 className="card-title text-base flex items-center gap-2">
                 <Package size={18} /> Best Selling Products
               </h2>
-              {stats.bestSellingProducts.length === 0 ? (
+              {bestSelling.length === 0 ? (
                 <p className="text-sm text-base-content/50">No sales yet.</p>
               ) : (
                 <div className="space-y-3 mt-2">
-                  {stats.bestSellingProducts.map((p) => (
+                  {bestSelling.map((p) => (
                     <div key={p._id} className="flex items-center gap-3">
-                      <img src={p.image} alt={p.title} className="w-10 h-10 rounded-lg object-cover bg-base-200" />
+                      <img
+                        src={p.image}
+                        alt={p.title ?? 'Product'}
+                        className="w-10 h-10 rounded-lg object-cover bg-base-200"
+                      />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium line-clamp-1">{p.title}</p>
-                        <p className="text-xs text-base-content/50">{p.totalSold} sold</p>
+                        <p className="text-sm font-medium line-clamp-1">{p.title ?? 'Unknown product'}</p>
+                        <p className="text-xs text-base-content/50">{p.totalSold ?? 0} sold</p>
                       </div>
-                      <span className="text-sm font-medium">${p.revenue.toFixed(2)}</span>
+                      <span className="text-sm font-medium">{money(p.revenue)}</span>
                     </div>
                   ))}
                 </div>
@@ -139,15 +150,15 @@ export const AdminDashboardPage = () => {
           <div className="card bg-base-100 border border-base-300">
             <div className="card-body">
               <h2 className="card-title text-base">Recent Orders</h2>
-              {stats.recentOrders.length === 0 ? (
+              {recentOrders.length === 0 ? (
                 <p className="text-sm text-base-content/50">No orders yet.</p>
               ) : (
                 <div className="space-y-2 mt-2">
-                  {stats.recentOrders.map((o) => (
+                  {recentOrders.map((o) => (
                     <div key={o._id} className="flex items-center justify-between text-sm">
                       <span className="line-clamp-1">{o.user?.name ?? 'Unknown'}</span>
-                      <span className="badge badge-ghost badge-sm capitalize">{o.status}</span>
-                      <span className="font-medium">${o.total.toFixed(2)}</span>
+                      <span className="badge badge-ghost badge-sm capitalize">{o.status ?? 'unknown'}</span>
+                      <span className="font-medium">{money(o.total)}</span>
                     </div>
                   ))}
                 </div>

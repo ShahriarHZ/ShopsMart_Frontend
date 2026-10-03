@@ -3,6 +3,14 @@ import { Star } from 'lucide-react';
 import { useProductReviews, useCreateReview, useDeleteReview } from '@/hooks/useReviews';
 import { useAuthStore } from '@/store/authStore';
 
+// Works whether the API returns `user` as an ID string or a populated object
+const getReviewUserId = (review: any): string | undefined =>
+  typeof review?.user === 'object' ? review.user?._id ?? review.user?.id : review?.user;
+
+// Works whether the name is `userName` or nested under `user.name`
+const getReviewName = (review: any): string =>
+  review?.userName ?? review?.user?.name ?? 'Anonymous';
+
 export const ReviewSection = ({ productId }: { productId: string }) => {
   const { data, isLoading } = useProductReviews(productId);
   const { user, isAuthenticated } = useAuthStore();
@@ -17,7 +25,7 @@ export const ReviewSection = ({ productId }: { productId: string }) => {
   const reviews = data?.reviews ?? [];
   const distribution = data?.distribution ?? {};
   const totalReviews = reviews.length;
-  const alreadyReviewed = !!user && reviews.some((r) => r.user === user.id);
+  const alreadyReviewed = !!user && reviews.some((r) => getReviewUserId(r) === user.id);
 
   const handleSubmit = () => {
     if (comment.trim().length < 3) return;
@@ -116,45 +124,50 @@ export const ReviewSection = ({ productId }: { productId: string }) => {
         <p className="text-base-content/50 text-sm">No reviews yet — be the first to share your thoughts.</p>
       ) : (
         <div className="space-y-4">
-          {reviews.map((review) => (
-            <div key={review._id} className="border-b border-base-300 pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="avatar placeholder">
-                    <div className="bg-base-300 text-base-content rounded-full w-8">
-                      <span className="text-xs">{review.userName[0]?.toUpperCase()}</span>
+          {reviews.map((review) => {
+            const name = getReviewName(review);
+            const isOwner = !!user && getReviewUserId(review) === user.id;
+
+            return (
+              <div key={review._id} className="border-b border-base-300 pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="avatar placeholder">
+                      <div className="bg-base-300 text-base-content rounded-full w-8">
+                        <span className="text-xs">{name[0]?.toUpperCase() ?? '?'}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{name}</p>
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            size={12}
+                            className={i < review.rating ? 'fill-warning text-warning' : 'text-base-300'}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{review.userName}</p>
-                    <div className="flex items-center gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          size={12}
-                          className={i < review.rating ? 'fill-warning text-warning' : 'text-base-300'}
-                        />
-                      ))}
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-base-content/40">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </span>
+                    {isOwner && (
+                      <button
+                        onClick={() => deleteReview(review._id)}
+                        className="text-xs text-error hover:underline"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-base-content/40">
-                    {new Date(review.createdAt).toLocaleDateString()}
-                  </span>
-                  {user?.id === review.user && (
-                    <button
-                      onClick={() => deleteReview(review._id)}
-                      className="text-xs text-error hover:underline"
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
+                <p className="text-sm text-base-content/70 mt-2">{review.comment}</p>
               </div>
-              <p className="text-sm text-base-content/70 mt-2">{review.comment}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
